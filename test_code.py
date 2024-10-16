@@ -36,8 +36,10 @@ def activate_window(window_title):
 
 
 # Example usage:
-folder_a = r'C:\path\to\your\folder_a'  # Update with your folder path
-folder_b = r'C:\path\to\your\folder_b'  # Update with your folder path
+# Update with your folder path
+folder_a = "F:\\Personal\\Proyectos\\Coding\\portfolio-api"
+# Update with your folder path
+folder_b = "F:\\Personal\\Proyectos\\Coding\\portfolio\\portfolio"
 
 # Open the folders
 os.startfile(folder_a)
@@ -47,7 +49,10 @@ time.sleep(2)  # Wait for the folders to open
 
 # Get the folder names
 folder_a_name = get_folder_name(folder_a)
+folder_a_name = f'{folder_a_name} - File Explorer'
+
 folder_b_name = get_folder_name(folder_b)
+folder_b_name = f'{folder_b_name} - File Explorer'
 
 # Activate the first folder window
 if activate_window(folder_a_name):

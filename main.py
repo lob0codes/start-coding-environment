@@ -2,8 +2,10 @@ import ctypes
 import os
 import json
 import time
-from typing import
+from typing import List
 import pygetwindow as gw
+import pyautogui
+import subprocess
 
 
 def get_folder_name(folder_path: str) -> str:
@@ -20,7 +22,9 @@ def get_work_area_dimensions():
     return work_width, work_height
 
 
-def move_window_to(target_window, position, screen_w):
+def move_window_to(target_window, position, left_offset=0, top_offset=0):
+
+    screen_w, _ = get_work_area_dimensions()
 
     target_y = 0
 
@@ -30,10 +34,76 @@ def move_window_to(target_window, position, screen_w):
     elif position == 'right':
         target_x = screen_w // 2
 
-    target_window.moveTo(target_x, target_y)
+    target_window.moveTo(target_x + left_offset, target_y + top_offset)
 
 
-# Opens two working folders.
+def snap_window_to_side(direction):
+    """
+    Simulates pressing Windows + Left or Windows + Right to snap the window.
+
+    :param direction: Either 'left' or 'right'.
+    """
+    if direction == 'left':
+        pyautogui.hotkey('win', 'left')
+    elif direction == 'right':
+        pyautogui.hotkey('win', 'right')
+
+
+def activate_window(window_title):
+    """
+    Activate the window with the specified title.
+
+    :param window_title: Title of the window to activate.
+    """
+    windows = gw.getWindowsWithTitle(window_title)
+    if windows:
+        window = windows[0]
+        window.activate()  # Bring the window to the foreground
+        return True
+    return False
+
+
+def open_git_bash_in_folder(folder_path):
+    # Check if the folder exists
+    if not os.path.isdir(folder_path):
+        print(f"Folder '{folder_path}' does not exist.")
+        return
+
+    # Construct the command to open Git Bash in the specified folder
+    command = ['F:\\Git\\git-bash.exe', f'--cd={folder_path}']
+
+    # Launch Git Bash in the given folder
+    subprocess.Popen(command)
+
+
+def get_git_bash_name(target_git_path):
+    output: List[str] = target_git_path.split('\\')
+    output = output[1:]
+    output = '/'.join(output)
+    output = f'MINGW64:/f/{output}'
+    return output
+
+
+def get_visual_studio_windows_names():
+    names = [name for name in gw.getAllTitles() if 'Visual Studio Code' in name]
+    return names
+
+
+def open_vscode_in_folder(folder_path):
+    # Validate if the path exists
+    if not os.path.exists(folder_path):
+        raise FileNotFoundError(f"The folder '{folder_path}' does not exist.")
+
+    # Open VS Code in the specified folder
+    subprocess.Popen(['F:\\Microsoft VS Code\\Code.exe', folder_path])
+
+
+def select_visual_studio_window(reference, names):
+    windows = [name for name in names if reference in name]
+    return windows[0]
+
+
+    # Opens two working folders.
 with open('folders.json', 'r') as file:
     folders = json.load(file)
 
@@ -48,14 +118,67 @@ folder_b_name = f'{folder_b_name} - File Explorer'
 os.startfile(folder_a)
 os.startfile(folder_b)
 
-screen_width, screen_height = get_work_area_dimensions()
-
 time.sleep(1)
 
-folder_a_window = gw.getWindowsWithTitle(folder_a_name)[0]
-move_window_to(folder_a_window, position='left', screen_w=screen_width)
-folder_a_window.resizeTo((screen_width // 2) + 10, screen_height + 5)
+# Activate the first folder window
+if activate_window(folder_a_name):
+    time.sleep(1.1)  # Wait to ensure the window is active
+    snap_window_to_side('left')  # Snap to left
 
-folder_b_window = gw.getWindowsWithTitle(folder_b_name)[0]
-move_window_to(folder_b_window, position='right', screen_w=screen_width)
-folder_b_window.resizeTo((screen_width // 2) + 5, screen_height + 5)
+time.sleep(1)  # Wait before focusing the next window
+
+# Activate the second folder window
+if activate_window(folder_b_name):
+    time.sleep(1.1)  # Wait to ensure the window is active
+    snap_window_to_side('right')  # Snap to right
+
+open_git_bash_in_folder(folder_a)
+time.sleep(2)
+open_git_bash_in_folder(folder_b)
+time.sleep(2)
+
+screen_width, screen_height = get_work_area_dimensions()
+
+git_bash_a_window_name = get_git_bash_name(folder_a)
+git_bash_a_window = gw.getWindowsWithTitle(git_bash_a_window_name)[0]
+move_window_to(git_bash_a_window, position='left',
+               left_offset=200, top_offset=325)
+
+git_bash_b_window_name = get_git_bash_name(folder_b)
+git_bash_b_window = gw.getWindowsWithTitle(git_bash_b_window_name)[0]
+
+move_window_to(git_bash_b_window, position='right',
+               left_offset=200, top_offset=325)
+
+# Open vscode in both folders and position opened windows.
+open_vscode_in_folder(folder_a)
+time.sleep(5)
+open_vscode_in_folder(folder_b)
+time.sleep(5)
+
+visual_studio_windows_names = get_visual_studio_windows_names()
+print(visual_studio_windows_names)
+
+files = ''
+with open('visual_studio_files_references.json', 'r') as file:
+    files = json.load(file)
+
+visual_studio_a_window_name = select_visual_studio_window(
+    files['file_a'], visual_studio_windows_names)
+print('a name:', visual_studio_a_window_name)
+
+if activate_window(visual_studio_a_window_name):
+    time.sleep(1.1)  # Wait to ensure the window is active
+    snap_window_to_side('left')
+    time.sleep(1.1)
+
+
+visual_studio_b_window_name = select_visual_studio_window(
+    files['file_b'], visual_studio_windows_names)
+
+print('b name:', visual_studio_b_window_name)
+
+if activate_window(visual_studio_b_window_name):
+    time.sleep(1.1)  # Wait to ensure the window is active
+    snap_window_to_side('right')
+    time.sleep(1.1)
